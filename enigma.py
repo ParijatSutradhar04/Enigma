@@ -98,14 +98,21 @@ with tab1:
     st.header("Send a Message")
 
     sender = st.text_input("Your Name", placeholder="Enter your name")
-    rotor_config = st.text_area("Rotor Config", placeholder="Enter as JSON (e.g., {0: 'A', 1: 'B', 2: 'C'})")
+
+    st.subheader("Rotor Configuration")
+    rotor_config = {}
+    for i in range(3):  # Allow configuration for 3 rotors
+        st.markdown(f"**Rotor {i + 1}**")
+        rotor_no = st.selectbox(f"Select Rotor Number for Rotor {i + 1}", [0, 1, 2, 3, 4], key=f"rotor_{i}_no")
+        rotor_position = st.text_input(f"Initial Position for Rotor {i + 1} (A-Z)", "A", key=f"rotor_{i}_position")
+        rotor_config[rotor_no] = rotor_position.upper()
+
     plugboard_wiring = st.text_input("Plugboard Wiring", placeholder="Enter plugboard wiring (e.g., AB CD EF)")
     message = st.text_area("Message", placeholder="Enter the message to encrypt")
 
     if st.button("Send"):
         if sender and rotor_config and plugboard_wiring and message:
             try:
-                rotor_config = eval(rotor_config)  # Convert input string to dictionary
                 encrypted_message = enigma_encrypt(rotor_config, plugboard_wiring, message)
                 new_entry = {"Sender": sender, 
                              "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 
@@ -123,12 +130,18 @@ with tab2:
     st.header("Messages")
     try:
         df = pd.read_csv(DATA_FILE)
-        rotor_config = st.text_area("Rotor Config for Decryption", placeholder="Enter rotor config for decryption")
-        plugboard_wiring = st.text_input("Plugboard Wiring for Decryption", 
-                                         placeholder="Enter plugboard wiring for decryption")
-        if rotor_config and plugboard_wiring:
+        st.subheader("Decrypt Messages")
+        rotor_config = {}
+        for i in range(3):  # Allow configuration for 3 rotors
+            st.markdown(f"**Rotor {i + 1}**")
+            rotor_no = st.selectbox(f"Select Rotor Number for Rotor {i + 1} (Decryption)", [0, 1, 2, 3, 4], key=f"decrypt_rotor_{i}_no")
+            rotor_position = st.text_input(f"Initial Position for Rotor {i + 1} (A-Z, Decryption)", "A", key=f"decrypt_rotor_{i}_position")
+            rotor_config[rotor_no] = rotor_position.upper()
+
+        plugboard_wiring = st.text_input("Plugboard Wiring for Decryption", placeholder="Enter plugboard wiring for decryption")
+        
+        if st.button("Decrypt"):
             try:
-                rotor_config = eval(rotor_config)  # Convert input string to dictionary
                 for _, row in df.iterrows():
                     decrypted_message = enigma_encrypt(rotor_config, plugboard_wiring, row["Message"])
                     st.write(f"**{row['Sender']}** ({row['Timestamp']}):")
@@ -136,10 +149,8 @@ with tab2:
                     st.write("---")
             except Exception as e:
                 st.error(f"Error: {e}")
-        else:
-            st.warning("Enter decryption keys to view decrypted messages.")
     except FileNotFoundError:
         st.error("No messages found yet!")
 
 st.sidebar.markdown("### About")
-st.sidebar.info("This is an Enigma Machine for encryption and decryption.")
+st.sidebar.info("This app is an Enigma Machine for encryption and decryption.")
